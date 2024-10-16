@@ -84,7 +84,8 @@ sudo apt update
 sudo apt install git
 sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 -y
 git clone https://github.com/Azuma413/SBC_YOLO.git
-
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
 ```
 
 
