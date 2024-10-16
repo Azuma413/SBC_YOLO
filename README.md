@@ -53,14 +53,41 @@ vscodeのリモートエクスプローラを開く
 ssh radxa@rock-5c.local
 ```
 # 動作確認
-YOLOv8を動かしてみる。
+YOLOv8を動かしてみる。\
+ファインチューニングの方法については[こちら](https://qiita.com/hirekatsu0523/items/f2f0e1a0f8a9ea92d913)を参照。\
+wslにリポジトリをダウンロード\
+```
+git clone https://github.com/Azuma413/SBC_YOLO.git
+```
+python3.8のconda環境を作成\
+```
+conda create -n rknn python=3.8
+conda activate rknn
+pip install ultralytics
+cd SBC_YOLO
+pip install -r packages/requirements_cp38-1.6.0.txt
+pip install packages/rknn_toolkit2-2.2.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+cd rknn_model_zoo/examples/yolov8/model
+bash download_model.sh
+```
+`rknn_model_zoo/examples/yolov8/model/yolov8n.onnx`がダウンロードされる。
+```
+cd rknn_model_zoo/examples/yolov8/python
+python3 convert.py ../model/yolov8n.onnx rk3588
+```
+チップはrk3582だが，これはrk3588の下位互換なのでこれでいい。
+`rknn_model_zoo/examples/yolov8/model/yolov8.rknn`が生成されるので，エッジデバイスにコピーする。
 
-ファインチューニングの方法については[こちら](https://qiita.com/hirekatsu0523/items/f2f0e1a0f8a9ea92d913)を参照。
+### SBC
+```
+sudo apt update
+sudo apt install python3-rknnlite2
+```
 
 
 
-# SBC_YOLO
-### 実装したい機能
+
+# 実装したい機能
 - 高精度な転倒検出\
 前提として，メモリ消費量は少なければ少ないほど，安いSBCで動作可能。
 - 年齢推定？
@@ -75,6 +102,10 @@ SOTA手法とかもあると思うけれど，サービスの継続性とかを�
 [公式ドキュメント](https://developer.d-robotics.cc/rdk_doc/en/Basic_Development)
 
 [転倒データセット](https://ieeexplore.ieee.org/document/9171857/algorithms?tabFilter=dataset#algorithms)
+
+[転倒データセット2](https://universe.roboflow.com/hero-d6kgf/yolov5-fall-detection)
+
+[転倒データセット3](https://www.perplexity.ai/search/zhuan-dao-jian-zhi-shou-fa-tot-YMOwBnkGTA69gU3SQhbZMw)
 
 [NPUで高速推論](https://qiita.com/ysuito/items/a0d3201581f9057c973b#npu%E3%81%A8%E3%81%AF)
 
