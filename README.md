@@ -81,7 +81,10 @@ python3 convert.py ../model/yolov8n.onnx rk3588
 ### SBC
 ```
 sudo apt update
-sudo apt install python3-rknnlite2
+sudo apt install git
+sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 -y
+git clone https://github.com/Azuma413/SBC_YOLO.git
+
 ```
 
 
