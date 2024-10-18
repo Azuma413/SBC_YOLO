@@ -271,6 +271,8 @@ if __name__ == '__main__':
         pad_color = (0,0,0)
         img = co_helper.letter_box(im= img.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0,0,0))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # 736, 1280, 3 -> 1, 736, 1280, 3
+        img = np.expand_dims(img, axis=0)
         print(img.shape)
         outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
         print(outputs.shape)
