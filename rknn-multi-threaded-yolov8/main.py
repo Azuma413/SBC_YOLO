@@ -2,14 +2,14 @@ import cv2
 import time
 from rknnpool import rknnPoolExecutor
 # 图像处理函数，实际应用过程中需要自行修改
-from funcv10 import myFunc
-# from func import myFunc
+from func import myFunc
 
 cap = cv2.VideoCapture('IMG_7202.MOV')
 # cap = cv2.VideoCapture(0)
-modelPath = "./rknnModel/yolov8n_rknn.rknn"
+modelPath = "./rknnModel/yolov8s.rknn"
+# modelPath = "./rknnModel/yolov8n_rknn.rknn"
 # 线程数, 增大可提高帧率
-TPEs = 3
+TPEs = 6
 # 初始化rknn池
 pool = rknnPoolExecutor(
     rknnModel=modelPath,
