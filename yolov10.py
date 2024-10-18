@@ -2,7 +2,6 @@ import os
 import cv2
 import sys
 import argparse
-import torch
 
 # add path
 realpath = os.path.abspath(__file__)
@@ -88,17 +87,15 @@ def nms_boxes(boxes, scores):
     return keep
 
 def dfl(position):
-    # Distribution Focal Loss (DFL)
-    import torch
-    x = torch.tensor(position)
+    x = position
     n,c,h,w = x.shape
     p_num = 4
     mc = c//p_num
     y = x.reshape(n,p_num,mc,h,w)
-    y = y.softmax(2)
-    acc_metrix = torch.tensor(range(mc)).float().reshape(1,1,mc,1,1)
+    y = np.exp(y) / np.exp(y).sum(2, keepdims=True)
+    acc_metrix = np.array(range(mc)).astype(np.float32).reshape(1,1,mc,1,1)
     y = (y*acc_metrix).sum(2)
-    return y.numpy()
+    return y
 
 
 def box_process(position):
@@ -185,21 +182,32 @@ def post_process_yolov10(input_data):
     boxes = [sp_flatten(_v) for _v in boxes]
     scores = [sp_flatten(_v) for _v in scores]
 
-    boxes = torch.from_numpy(np.expand_dims(np.concatenate(boxes), axis=0))
-    scores = torch.from_numpy(np.expand_dims(np.concatenate(scores), axis=0))
+    # NumPyの配列に変換し、次元を追加して結合します。
+    boxes = np.expand_dims(np.concatenate(boxes, axis=0), axis=0)
+    scores = np.expand_dims(np.concatenate(scores, axis=0), axis=0)
 
-    max_scores = scores.amax(dim=-1)
-    max_scores, index = torch.topk(max_scores, max_det, axis=-1)
-    index = index.unsqueeze(-1)
-    boxes = torch.gather(boxes, dim=1, index=index.repeat(1, 1, boxes.shape[-1]))
-    scores = torch.gather(scores, dim=1, index=index.repeat(1, 1, scores.shape[-1]))
+    # スコアの最大値を取得します。
+    max_scores = np.amax(scores, axis=-1)
+    index = np.argsort(-max_scores, axis=-1)[:, :max_det]
 
-    scores, index = torch.topk(scores.flatten(1), max_det, axis=-1)
-    labels = index % nc
-    index = index // nc
-    boxes = boxes.gather(dim=1, index=index.unsqueeze(-1).repeat(1, 1, boxes.shape[-1]))
+    # インデックスを使ってボックスとスコアを取得します。
+    boxes = np.take_along_axis(boxes, index[..., np.newaxis].repeat(boxes.shape[-1], axis=-1), axis=1)
+    scores = np.take_along_axis(scores, index[..., np.newaxis].repeat(scores.shape[-1], axis=-1), axis=1)
 
-    preds = torch.cat([boxes, scores.unsqueeze(-1), labels.unsqueeze(-1)], dim=-1)
+    # スコアとインデックスを再度計算します。
+    flat_scores = scores.reshape(scores.shape[0], -1)
+    score_index = np.argsort(-flat_scores, axis=-1)[:, :max_det]
+    scores = np.take_along_axis(flat_scores, score_index, axis=-1)
+
+    # ラベルとインデックスを計算します。
+    labels = score_index % nc
+    index = score_index // nc
+
+    # ボックスをインデックスに基づいて取得します。
+    boxes = np.take_along_axis(boxes, index[..., np.newaxis].repeat(boxes.shape[-1], axis=-1), axis=1)
+
+    # 最終的な予測結果を結合します。
+    preds = np.concatenate([boxes, scores[..., np.newaxis], labels[..., np.newaxis]], axis=-1)
 
     mask = preds[..., 4] > OBJ_THRESH
 
@@ -220,20 +228,9 @@ def draw(image, boxes, scores, classes):
 
 def setup_model(args):
     model_path = args.model_path
-    if model_path.endswith('.pt') or model_path.endswith('.torchscript'):
-        platform = 'pytorch'
-        from rknn_model_zoo.py_utils.pytorch_executor import Torch_model_container
-        model = Torch_model_container(args.model_path)
-    elif model_path.endswith('.rknn'):
-        platform = 'rknn'
-        from rknn_model_zoo.py_utils.rknn_executor import RKNN_model_container 
-        model = RKNN_model_container(args.model_path, args.target, args.device_id)
-    elif model_path.endswith('onnx'):
-        platform = 'onnx'
-        from rknn_model_zoo.py_utils.onnx_executor import ONNX_model_container
-        model = ONNX_model_container(args.model_path)
-    else:
-        assert False, "{} is not rknn/pytorch/onnx model".format(model_path)
+    platform = 'rknn'
+    from rknn_model_zoo.py_utils.rknn_executor import RKNN_model_container 
+    model = RKNN_model_container(args.model_path, args.target, args.device_id)
     print('Model-{} is {} model, starting val'.format(model_path, platform))
     return model, platform
 
