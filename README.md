@@ -97,10 +97,12 @@ yolo export model=yolov10m.pt format=onnx opset=13 simplify
 ```
 次に`.onnx`を`.rknn`に変換する。
 ```
-python convert.py yolov10n.onnx rk3588 fp yolov10n.rknn
-python convert.py yolov10s.onnx rk3588 fp yolov10s.rknn
-python convert.py yolov10m.onnx rk3588 fp yolov10m.rknn
+python convert.py yolov10n.onnx rk3588 i8 yolov10n.rknn
+python convert.py yolov10s.onnx rk3588 i8 yolov10s.rknn
+python convert.py yolov10m.onnx rk3588 i8 yolov10m.rknn
 ```
+
+ python yolov10.py --model_path yolov10s.rknn --img_show True --img_save True
 
 https://repo.anaconda.com/miniconda/Miniconda3-py311_24.7.1-0-Linux-aarch64.sh
 
