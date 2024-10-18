@@ -2,7 +2,7 @@ import os
 import cv2
 import sys
 import argparse
-
+from rknnlite.api import RKNNLite
 # add path
 realpath = os.path.abspath(__file__)
 _sep = os.path.sep
@@ -252,18 +252,13 @@ if __name__ == '__main__':
     # coco val folder: '../../../datasets/COCO//val2017'
     parser.add_argument('--img_folder', type=str, default='../model', help='img folder path')
     parser.add_argument('--coco_map_test', action='store_true', help='enable coco map test')
-
     args = parser.parse_args()
-
-    # init model
-    model, platform = setup_model(args)
-
-    # file_list = sorted(os.listdir(args.img_folder))
-    # img_list = []
-    # for path in file_list:
-    #     if img_check(path):
-    #         img_list.append(path)
-    # 動画を読み込む
+    rknn_lite = RKNNLite(verbose=False)
+    ret = rknn_lite.load_rknn(args.model_path)
+    ret = rknn_lite.init_runtime(core_mask=RKNNLite.NPU_CORE_0)
+    if ret != 0:
+        print("Init runtime environment failed")
+        exit(ret)
     video = cv2.VideoCapture('IMG_7202.MOV')
     img_list = []
     while True:
@@ -282,16 +277,7 @@ if __name__ == '__main__':
         pad_color = (0,0,0)
         img = co_helper.letter_box(im= img.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0,0,0))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        # preprocee if not rknn model
-        if platform in ['pytorch', 'onnx']:
-            input_data = img.transpose((2,0,1))
-            input_data = input_data.reshape(1,*input_data.shape).astype(np.float32)
-            input_data = input_data/255.
-        else:
-            input_data = img
-
-        outputs = model.run([input_data])
+        outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
         boxes, classes, scores = post_process_yolov10(outputs)
         if boxes is not None:
             draw(img, co_helper.get_real_box(boxes), scores, classes)
