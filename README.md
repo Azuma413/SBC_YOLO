@@ -6,8 +6,8 @@ SBC: radxa rock 5c lite 4GB
 
 SBCにディスプレイ，電源，キーボードを繋ぐ。
 ### SBC
-ログインは
-アカウント名：radxa
+ログインは\
+アカウント名：radxa\
 パスワード：radxa
 
 nmtuiでwifiに接続する。
@@ -55,7 +55,7 @@ ssh radxa@rock-5c.local
 # 動作確認
 YOLOv8を動かしてみる。\
 ファインチューニングの方法については[こちら](https://qiita.com/hirekatsu0523/items/f2f0e1a0f8a9ea92d913)を参照。\
-wslにリポジトリをダウンロード\
+wslにリポジトリをダウンロード
 ```
 git clone https://github.com/Azuma413/SBC_YOLO.git
 ```
@@ -87,7 +87,22 @@ git clone https://github.com/Azuma413/SBC_YOLO.git
 git config --global user.email "you@example.com"
 git config --global user.name "Your Name"
 ```
-
+# YOLOv10 ファインチューニング
+# YOLOv10 マルチスレッド実行
+まずは`.pt`をダウンロードして`.onnx`を作成する。以下のコマンドで勝手にやってくれる。
+```
+conda activate rknn
+cd weight/v10
+yolo export model=yolov10n.pt format=onnx opset=13 simplify
+yolo export model=yolov10s.pt format=onnx opset=13 simplify
+yolo export model=yolov10m.pt format=onnx opset=13 simplify
+```
+次に`.onnx`を`.rknn`に変換する。
+```
+python convert.py yolov10n.onnx rk3588 fp yolov10n.rknn
+python convert.py yolov10s.onnx rk3588 fp yolov10s.rknn
+python convert.py yolov10m.onnx rk3588 fp yolov10m.rknn
+```
 
 
 
@@ -101,6 +116,13 @@ git config --global user.name "Your Name"
 
 SOTA手法とかもあると思うけれど，サービスの継続性とかを考えると，結局YOLOがよさそう。
 
+とりあえずYOLOv8sを転倒データセットでトレーニング
+pt→onnx→rknn
+
+# リポジトリ
+[rknn_model_zoo](https://github.com/airockchip/rknn_model_zoo)\
+[rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2)\
+[rknn-cpp-Multithreading](https://github.com/leafqycc/rknn-cpp-Multithreading)
 
 # 参考
 [公式ドキュメント](https://developer.d-robotics.cc/rdk_doc/en/Basic_Development)
