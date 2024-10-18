@@ -24,6 +24,8 @@ if (cap.isOpened()):
             cap.release()
             del pool
             exit(-1)
+        # frameを720pにリサイズ
+        frame = cv2.resize(frame, (1280, 720))
         pool.put(frame)
 
 frames, loopTime, initTime = 0, time.time(), time.time()
