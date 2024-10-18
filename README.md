@@ -12,11 +12,9 @@ SBCにディスプレイ，電源，キーボードを繋ぐ。
 
 nmtuiでwifiに接続する。
 ```
+setxkbmap us dvorak
 sudo apt update && sudo apt upgrade -y
-sudo apt install console-setup
-sudo loadkeys dvorak
 ```
-エラーが発生しても気にしない。
 ```
 sudo visudo
 ```
