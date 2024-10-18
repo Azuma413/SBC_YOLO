@@ -2,7 +2,8 @@ import cv2
 import time
 from rknnpool import rknnPoolExecutor
 # 图像处理函数，实际应用过程中需要自行修改
-from func import myFunc
+from funcv10 import myFunc
+# from func import myFunc
 
 cap = cv2.VideoCapture('IMG_7202.MOV')
 # cap = cv2.VideoCapture(0)
