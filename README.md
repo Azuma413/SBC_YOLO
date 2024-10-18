@@ -102,7 +102,7 @@ python convert.py yolov10s.onnx rk3588 fp yolov10s.rknn
 python convert.py yolov10m.onnx rk3588 fp yolov10m.rknn
 ```
 
-
+https://repo.anaconda.com/miniconda/Miniconda3-py311_24.7.1-0-Linux-aarch64.sh
 
 # 実装したい機能
 - 高精度な転倒検出\
