@@ -3,12 +3,6 @@ import cv2
 import sys
 import argparse
 from rknnlite.api import RKNNLite
-# add path
-realpath = os.path.abspath(__file__)
-_sep = os.path.sep
-realpath = realpath.split(_sep)
-sys.path.append(os.path.join(realpath[0]+_sep, *realpath[1:realpath.index('rknn_model_zoo')+1]))
-
 from rknn_model_zoo.py_utils.coco_utils import COCO_test_helper
 import numpy as np
 
@@ -277,7 +271,9 @@ if __name__ == '__main__':
         pad_color = (0,0,0)
         img = co_helper.letter_box(im= img.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0,0,0))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        print(img.shape)
         outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
+        print(outputs.shape)
         boxes, classes, scores = post_process_yolov10(outputs)
         if boxes is not None:
             draw(img, co_helper.get_real_box(boxes), scores, classes)
