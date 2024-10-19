@@ -105,6 +105,7 @@ git clone https://github.com/Azuma413/SBC_YOLO.git
 # WebRTCテスト
 ```
 pip install aiortc websockets opencv-python
+pip install streamlit==1.33.0 streamlit-webrtc
 ```
 
 

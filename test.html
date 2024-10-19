@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC Video Stream</title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WebRTC Video Stream</title>
+        <style>
+            video {
+                width: 100%;
+                height: auto;
+                background: black;
+            }
+        </style>
+    </head>
 <body>
     <h1>WebRTC Video Stream</h1>
     <video id="video" autoplay playsinline></video>
@@ -14,15 +21,47 @@
 
         pc.ontrack = (event) => {
             console.log('Track received:', event);
-            video.srcObject = event.streams[0];
+            if (event.streams && event.streams[0]) {
+                video.srcObject = event.streams[0];
+                console.log('Video stream set to video element');
+            } else {
+                console.log('No streams found in event');
+            }
+        };
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log('ICE candidate:', event.candidate);
+            } else {
+                console.log('All ICE candidates have been sent');
+            }
         };
 
         async function start() {
             const ws = new WebSocket('ws://localhost:8765');
             ws.onopen = async () => {
                 console.log('WebSocket connection opened');
+                const transceiver = pc.addTransceiver('video', { direction: 'recvonly' });
+                const codecs = RTCRtpReceiver.getCapabilities('video').codecs;
+                console.log('Supported video codecs:', codecs);
+                const preferredCodecs = codecs.filter(codec => {
+                    return codec.mimeType === 'video/H264' &&
+                        codec.sdpFmtpLine.includes('profile-level-id=42e01f') &&
+                        codec.sdpFmtpLine.includes('packetization-mode=1');
+                });
+
+                // コーデックの優先順位を設定
+                if (preferredCodecs.length > 0) {
+                    transceiver.setCodecPreferences(preferredCodecs);
+                    console.log('Preferred codecs set to:', preferredCodecs);
+                } else {
+                    console.error('No suitable codecs found');
+                }
+                // const preferredCodecs = codecs.filter(codec => codec.mimeType === 'video/H264');
+                transceiver.setCodecPreferences(preferredCodecs);
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
+                console.log('Sending SDP:', pc.localDescription.sdp);
 
                 ws.send(JSON.stringify({
                     sdp: pc.localDescription.sdp,
@@ -31,10 +70,20 @@
             };
 
             ws.onmessage = async (message) => {
-                console.log('Message received from server:', message.data);
+                // console.log('Message received from server:', message.data);
                 const data = JSON.parse(message.data);
+                console.log('Received SDP:', data.sdp);
                 const remoteDesc = new RTCSessionDescription(data);
                 await pc.setRemoteDescription(remoteDesc);
+                if (remoteDesc.type === 'offer') {
+                    console.log('Creating answer');
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    ws.send(JSON.stringify({
+                        sdp: pc.localDescription.sdp,
+                        type: pc.localDescription.type
+                    }));
+                }
             };
 
             ws.onerror = (error) => {
@@ -46,7 +95,11 @@
             };
         }
 
-        start();
+        start().catch(console.error);
+        // ビデオ要素のエラーハンドリング
+        video.onerror = (event) => {
+            console.error('Video element error:', event);
+        };
     </script>
 </body>
 </html>
