@@ -10,6 +10,8 @@ import numpy as np
 from streamlit_webrtc import VideoTransformerBase, webrtc_streamer, WebRtcMode
 import av
 from aiortc.contrib.media import MediaPlayer
+from logging import getLogger
+logger = getLogger(__name__)
 
 st.title("YOLOv10物体認識デモ")
 
@@ -246,7 +248,7 @@ class rknnPoolExecutor():
             rknn_lite.release()
 
 if 'fps' not in st.session_state:
-    st.session_state.fps = 'Calculating...'
+    st.session_state.fps = '計算中...'
 
 fps_text = st.empty()
 
@@ -266,23 +268,28 @@ class VideoProcessor:
         self.loopTime = time.time()
         self.initTime = time.time()
     def recv(self, frame):
-        self.count += 1
-        if self.count <= TPEs + 1:
-            self.pool.put(frame)
-            return frame
-        if self.count == TPEs + 31:
-            self.count = TPEs + 1
-            st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}fps"
-            self.loopTime = time.time()
+        # self.count += 1
+        # if self.count <= TPEs + 1:
+        #     self.pool.put(frame)
+        #     return frame
+        # if self.count == TPEs + 31:
+        #     self.count = TPEs + 1
+        #     st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}"
+        #     self.loopTime = time.time()
+        logger.info("Processing video frame")
         self.pool.put(frame)
+        logger.info("put frame")
         img, flag = self.pool.get()
+        logger.info("get frame")
         if flag == False:
+            logger.info("flag is False")
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        logger.info("convert color")
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 def update_fps():
-    fps_text.text(st.session_state.fps)
+    fps_text.text("FPS: ", st.session_state.fps)
 
 ctx = webrtc_streamer(
     key="example",
