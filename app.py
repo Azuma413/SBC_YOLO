@@ -264,7 +264,7 @@ class VideoProcessor:
         self.loopTime = time.time()
         self.initTime = time.time()
     def recv(self, frame):
-        global pool, fps
+        global pool
         nd_frame = frame.to_ndarray(format="rgb24")
         self.count += 1
         if self.count <= TPEs + 1:
