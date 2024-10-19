@@ -251,9 +251,7 @@ class rknnPoolExecutor():
         for rknn_lite in self.rknnPool:
             rknn_lite.release()
 
-fps_text = st.empty()
 pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
-fps = 'FPS: 計算中...'
 
 def create_player():
     return MediaPlayer('IMG_7202.MOV')
@@ -269,19 +267,16 @@ class VideoProcessor:
         global pool, fps
         nd_frame = frame.to_ndarray(format="rgb24")
         self.count += 1
-        logger.info(f"frame count: {self.count}")
         if self.count <= TPEs + 1:
             pool.put(nd_frame)
-            logger.info("return frame 1")
             return frame
         if self.count == TPEs + 31:
             self.count = TPEs + 1
-            fps = f"FPS: {30 / (time.time() - self.loopTime):.2f}"
+            logger.info(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
             self.loopTime = time.time()
         pool.put(nd_frame)
         img, flag = pool.get()
         if flag == False:
-            logger.info("return frame 2")
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return av.VideoFrame.from_ndarray(img, format="bgr24")
@@ -301,6 +296,5 @@ ctx = webrtc_streamer(
 )
 
 if ctx.video_processor:
-    fps_text.markdown(fps, unsafe_allow_html=True)
     ctx.video_processor.threshold1 = OBJ_THRESH
     ctx.video_processor.threshold2 = NMS_THRESH
