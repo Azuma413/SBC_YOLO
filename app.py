@@ -245,7 +245,9 @@ class rknnPoolExecutor():
         for rknn_lite in self.rknnPool:
             rknn_lite.release()
 
-frame_window = st.image([])
+if 'fps' not in st.session_state:
+    st.session_state.fps = 'Calculating...'
+
 fps_text = st.empty()
 
 def create_player():
@@ -270,7 +272,7 @@ class VideoProcessor:
             return frame
         if self.count == TPEs + 31:
             self.count = TPEs + 1
-            fps_text.text(f"{30 / (time.time() - self.loopTime):.2f}fps")
+            st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}fps"
             self.loopTime = time.time()
         self.pool.put(frame)
         img, flag = self.pool.get()
@@ -278,6 +280,9 @@ class VideoProcessor:
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+def update_fps():
+    fps_text.text(st.session_state.fps)
 
 ctx = webrtc_streamer(
     key="example",
@@ -296,3 +301,8 @@ ctx = webrtc_streamer(
 if ctx.video_processor:
     ctx.video_processor.threshold1 = OBJ_THRESH
     ctx.video_processor.threshold2 = NMS_THRESH
+
+if ctx.state.playing:
+    while True:
+        update_fps()
+        time.sleep(0.1)
