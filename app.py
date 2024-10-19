@@ -265,8 +265,11 @@ class VideoProcessor:
         self.initTime = time.time()
     def recv(self, frame):
         self.count += 1
-        if self.count % 30 == 0:
-            self.count = 0
+        if self.count <= TPEs + 1:
+            self.pool.put(frame)
+            return frame
+        if self.count == TPEs + 31:
+            self.count = TPEs + 1
             fps_text.text(f"{30 / (time.time() - self.loopTime):.2f}fps")
             self.loopTime = time.time()
         self.pool.put(frame)
