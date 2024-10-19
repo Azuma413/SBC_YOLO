@@ -1,7 +1,5 @@
 import streamlit as st
 import cv2
-# from rknnpool import rknnPoolExecutor
-# from func import myFunc
 import time
 from queue import Queue
 from rknnlite.api import RKNNLite
@@ -255,6 +253,8 @@ class rknnPoolExecutor():
 
 if 'fps' not in st.session_state:
     st.session_state.fps = '計算中...'
+if 'last_update' not in st.session_state:
+    st.session_state.last_update = time.time()
 
 fps_text = st.empty()
 pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
@@ -271,7 +271,7 @@ class VideoProcessor:
         self.initTime = time.time()
     def recv(self, frame):
         global pool
-        nd_frame = frame.to_ndarray(format="bgr24")
+        nd_frame = frame.to_ndarray()
         self.count += 1
         logger.info(f"frame count: {self.count}")
         if self.count <= TPEs + 1:
@@ -294,7 +294,10 @@ class VideoProcessor:
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 def update_fps():
-    fps_text.text(f"FPS: {st.session_state.fps}")
+    current_time = time.time()
+    if current_time - st.session_state.last_update >= 0.5:
+        fps_text.text(f"FPS: {st.session_state.fps}")
+        st.session_state.last_update = current_time
 
 ctx = webrtc_streamer(
     key="example",
@@ -314,7 +317,4 @@ if ctx.video_processor:
     ctx.video_processor.threshold1 = OBJ_THRESH
     ctx.video_processor.threshold2 = NMS_THRESH
 
-if ctx.state.playing:
-    while True:
-        update_fps()
-        time.sleep(0.1)
+update_fps()
