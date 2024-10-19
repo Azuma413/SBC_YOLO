@@ -239,13 +239,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     # basic params
     parser.add_argument('--model_path', type=str, required= True, help='model path, could be .pt or .rknn file')
-    parser.add_argument('--target', type=str, default='rk3588', help='target RKNPU platform')
-    parser.add_argument('--device_id', type=str, default=None, help='device id')
+    # parser.add_argument('--target', type=str, default='rk3588', help='target RKNPU platform')
+    # parser.add_argument('--device_id', type=str, default=None, help='device id')
     # data params
-    parser.add_argument('--anno_json', type=str, default='../../../datasets/COCO/annotations/instances_val2017.json', help='coco annotation path')
+    # parser.add_argument('--anno_json', type=str, default='../../../datasets/COCO/annotations/instances_val2017.json', help='coco annotation path')
     # coco val folder: '../../../datasets/COCO//val2017'
-    parser.add_argument('--img_folder', type=str, default='../model', help='img folder path')
-    parser.add_argument('--coco_map_test', action='store_true', help='enable coco map test')
+    # parser.add_argument('--img_folder', type=str, default='../model', help='img folder path')
+    # parser.add_argument('--coco_map_test', action='store_true', help='enable coco map test')
     args = parser.parse_args()
     rknn_lite = RKNNLite(verbose=False)
     ret = rknn_lite.load_rknn(args.model_path)

@@ -50,31 +50,49 @@ vscodeのリモートエクスプローラを開く
 ```
 ssh radxa@rock-5c.local
 ```
-# 動作確認
-YOLOv8を動かしてみる。\
-ファインチューニングの方法については[こちら](https://qiita.com/hirekatsu0523/items/f2f0e1a0f8a9ea92d913)を参照。\
+# YOLOv10
+### ファインチューニング
 wslにリポジトリをダウンロード
 ```
-git clone https://github.com/Azuma413/SBC_YOLO.git
+git clone --recurse-submodules -j8 https://github.com/Azuma413/SBC_YOLO.git
 ```
-python3.8のconda環境を作成\
+python3.8のconda環境を作成
 ```
 conda create -n rknn python=3.8
 conda activate rknn
 pip install ultralytics
-cd SBC_YOLO
+cd SBC_YOLO/rknn-toolkit2/rknn-toolkit2
 pip install -r packages/requirements_cp38-1.6.0.txt
 pip install packages/rknn_toolkit2-2.2.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-cd rknn_model_zoo/examples/yolov8/model
-bash download_model.sh
 ```
-`rknn_model_zoo/examples/yolov8/model/yolov8n.onnx`がダウンロードされる。
+yolo用のconda環境を作成
 ```
-cd rknn_model_zoo/examples/yolov8/python
-python3 convert.py ../model/yolov8n.onnx rk3588
+conda create -n yolov10 python=3.9
+conda activate yolov10
+cd yolov10
+pip install -r requirements.txt
+pip install -e .
+pip install "numpy<2"
 ```
-チップはrk3582だが，これはrk3588の下位互換なのでこれでいい。
-`rknn_model_zoo/examples/yolov8/model/yolov8.rknn`が生成されるので，エッジデバイスにコピーする。
+
+TODO: ファインチューニングの具体的な方法を書く。
+
+ファインチューニングの方法については[こちら](https://qiita.com/hirekatsu0523/items/f2f0e1a0f8a9ea92d913)を参照。
+
+### rknn変換
+```
+conda activate yolov10
+yolo export model=path/to/your_model.pt format=rknn opset=13 simplify imgsz=736,1280
+```
+これでrknnに対応した形式のonnxファイルが出力される。
+```
+conda activate rknn
+cp your_model.onnx rknn_model_zoo/examples/yolov10/python
+cd rknn_model_zoo/examples/yolov10/python
+python convert.py your_model.onnx rk3588 i8 your_model.rknn
+cd ../../../..
+cp rknn_model_zoo/examples/yolov10/python/your_model.rknn .
+```
 
 ### SBC
 ```
@@ -82,42 +100,10 @@ sudo apt update
 sudo apt install git
 sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 -y
 git clone https://github.com/Azuma413/SBC_YOLO.git
-git config --global user.email "you@example.com"
-git config --global user.name "Your Name"
-```
-# YOLOv10 ファインチューニング
-# YOLOv10 マルチスレッド実行
-まずは`.pt`をダウンロードして`.onnx`を作成する。以下のコマンドで勝手にやってくれる。
-```
-conda activate rknn
-cd weight/v10
-yolo export model=yolov10n.pt format=onnx opset=13 simplify
-yolo export model=yolov10s.pt format=onnx opset=13 simplify
-yolo export model=yolov10m.pt format=onnx opset=13 simplify
-```
-次に`.onnx`を`.rknn`に変換する。
-```
-python convert.py yolov10n.onnx rk3588 i8 yolov10n.rknn
-python convert.py yolov10s.onnx rk3588 i8 yolov10s.rknn
-python convert.py yolov10m.onnx rk3588 i8 yolov10m.rknn
 ```
 
- python yolov10.py --model_path yolov10s.rknn --img_show True --img_save True
+python yolov10.py --model_path test2.rknn
 
-https://repo.anaconda.com/miniconda/Miniconda3-py311_24.7.1-0-Linux-aarch64.sh
-
-# 実装したい機能
-- 高精度な転倒検出\
-前提として，メモリ消費量は少なければ少ないほど，安いSBCで動作可能。
-- 年齢推定？
-- 人物の判別はやりたい
-- 人物ごとの移動距離等の時系列データの保存\
-→webで閲覧可能
-
-SOTA手法とかもあると思うけれど，サービスの継続性とかを考えると，結局YOLOがよさそう。
-
-とりあえずYOLOv8sを転倒データセットでトレーニング
-pt→onnx→rknn
 
 # リポジトリ
 [rknn_model_zoo](https://github.com/airockchip/rknn_model_zoo)\
@@ -125,17 +111,11 @@ pt→onnx→rknn
 [rknn-cpp-Multithreading](https://github.com/leafqycc/rknn-cpp-Multithreading)
 
 # 参考
-[公式ドキュメント](https://developer.d-robotics.cc/rdk_doc/en/Basic_Development)
-
-[転倒データセット](https://ieeexplore.ieee.org/document/9171857/algorithms?tabFilter=dataset#algorithms)
-
-[転倒データセット2](https://universe.roboflow.com/hero-d6kgf/yolov5-fall-detection)
-
-[転倒データセット3](https://www.perplexity.ai/search/zhuan-dao-jian-zhi-shou-fa-tot-YMOwBnkGTA69gU3SQhbZMw)
-
-[NPUで高速推論](https://qiita.com/ysuito/items/a0d3201581f9057c973b#npu%E3%81%A8%E3%81%AF)
-
-[YOLOv8で転倒検出](https://github.com/pahaht/YOLOv8-Fall-detection)
-
+[公式ドキュメント](https://developer.d-robotics.cc/rdk_doc/en/Basic_Development)\
+[転倒データセット](https://ieeexplore.ieee.org/document/9171857/algorithms?tabFilter=dataset#algorithms)\
+[転倒データセット2](https://universe.roboflow.com/hero-d6kgf/yolov5-fall-detection)\
+[転倒データセット3](https://www.perplexity.ai/search/zhuan-dao-jian-zhi-shou-fa-tot-YMOwBnkGTA69gU3SQhbZMw)\
+[NPUで高速推論](https://qiita.com/ysuito/items/a0d3201581f9057c973b#npu%E3%81%A8%E3%81%AF)\
+[YOLOv8で転倒検出](https://github.com/pahaht/YOLOv8-Fall-detection)\
 [Google検索](https://www.google.com/search?q=yolo+human+falling&sca_esv=fef8a0a8565c2553&sxsrf=ADLYWIK8XVuBc0kY8tuDLcxB5Fnie2qsaA%3A1728566423082&source=hp&ei=l9QHZ_rhAYfCvr0Pl7ekwQg&iflsig=AL9hbdgAAAAAZwfipxpoqxLX23iIPpkSSvkbhSfRzRyT&ved=0ahUKEwi6ifbc84OJAxUHoa8BHZcbKYgQ4dUDCA8&uact=5&oq=yolo+human+falling&gs_lp=Egdnd3Mtd2l6IhJ5b2xvIGh1bWFuIGZhbGxpbmcyCBAAGIAEGKIEMggQABiABBiiBDIIEAAYgAQYogQyCBAAGIAEGKIEMggQABiABBiiBEjyHlCjAViaHXABeACQAQCYAXSgAbINqgEEMTQuNLgBA8gBAPgBAZgCE6ACzA2oAgrCAgcQIxgnGOoCwgIMECMYgAQYExgnGIoFwgINEAAYgAQYsQMYgwEYBMICCxAAGIAEGLEDGIMBwgIQEAAYgAQYsQMYQxiDARiKBcICDhAAGIAEGLEDGIMBGIoFwgIKEAAYgAQYsQMYBMICBxAAGIAEGATCAgoQABiABBhDGIoFwgIFEAAYgATCAggQABiABBixA8ICCRAAGIAEGAQYCsICCBAAGIAEGMsBwgIEEAAYHsICBhAAGAgYHsICCBAAGAgYChgewgIKEAAYCBgKGA0YHsICBRAhGKABmAMEkgcEMTEuOKAHjC8&sclient=gws-wiz)\
 色々ある。
