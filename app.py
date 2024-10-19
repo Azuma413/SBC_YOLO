@@ -271,15 +271,17 @@ class VideoProcessor:
         self.initTime = time.time()
     def recv(self, frame):
         global pool
-        # self.count += 1
-        # if self.count <= TPEs + 1:
-        #     self.pool.put(frame)
-        #     return frame
-        # if self.count == TPEs + 31:
-        #     self.count = TPEs + 1
-        #     st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}"
-        #     self.loopTime = time.time()
+        self.count += 1
+        if self.count <= TPEs + 1:
+            self.pool.put(frame)
+            return frame
+        if self.count == TPEs + 31:
+            self.count = TPEs + 1
+            st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}"
+            self.loopTime = time.time()
         logger.debug("recv")
+        # frameはav.video.frame.VideoFrame型なのでnumpy.ndarray型に変換
+        frame = frame.to_ndarray(format="bgr24")
         pool.put(frame)
         logger.debug("put")
         img, flag = pool.get()
