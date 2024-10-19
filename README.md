@@ -109,6 +109,8 @@ pip install streamlit==1.33.0 streamlit-webrtc
 sudo pip install streamlit --break-system-packages
 ```
 
+streamlit run app.py --server.headless true
+
 
 # リポジトリ
 [rknn_model_zoo](https://github.com/airockchip/rknn_model_zoo)\

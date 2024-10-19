@@ -285,3 +285,5 @@ class VideoProcessor(VideoTransformerBase):
     def on_close(self):
         self.pool.release()
         self.cap.release()
+# 自動でブラウザを開かない
+webrtc_streamer(key="example", video_processor_factory=VideoProcessor, mode="sendonly", rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
