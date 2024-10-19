@@ -252,8 +252,8 @@ class rknnPoolExecutor():
             rknn_lite.release()
 
 fps_text = st.empty()
-fps_text.text("FPS: 計算中...")
 pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
+fps = 'FPS: 計算中...'
 
 def create_player():
     return MediaPlayer('IMG_7202.MOV')
@@ -266,7 +266,7 @@ class VideoProcessor:
         self.loopTime = time.time()
         self.initTime = time.time()
     def recv(self, frame):
-        global pool, fps_text
+        global pool, fps
         nd_frame = frame.to_ndarray(format="rgb24")
         self.count += 1
         logger.info(f"frame count: {self.count}")
@@ -276,17 +276,14 @@ class VideoProcessor:
             return frame
         if self.count == TPEs + 31:
             self.count = TPEs + 1
-            fps_text.text(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
+            fps = f"FPS: {30 / (time.time() - self.loopTime):.2f}"
             self.loopTime = time.time()
         pool.put(nd_frame)
-        logger.info("put frame")
         img, flag = pool.get()
-        logger.info("get frame")
         if flag == False:
             logger.info("return frame 2")
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        logger.info("convert color")
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 ctx = webrtc_streamer(
@@ -304,5 +301,6 @@ ctx = webrtc_streamer(
 )
 
 if ctx.video_processor:
+    fps_text.markdown(fps, unsafe_allow_html=True)
     ctx.video_processor.threshold1 = OBJ_THRESH
     ctx.video_processor.threshold2 = NMS_THRESH
