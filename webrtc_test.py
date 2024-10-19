@@ -5,7 +5,7 @@ import websockets
 import asyncio
 import json
 
-pc = RTCPeerConnection()
+pc = None
 webcam = None
 
 class VideoTransformTrack(VideoStreamTrack):
@@ -20,12 +20,13 @@ class VideoTransformTrack(VideoStreamTrack):
     async def next_frame(self):
         ret, frame = self.cap.read()
         if not ret:
-            return
+            return None
         return aiortc.VideoFrame.from_ndarray(frame, format="rgb24")
 
 async def run(pc, offer):
     await pc.setRemoteDescription(offer)
     answer = await pc.createAnswer()
+    print(f"Created answer: {answer}")
     await pc.setLocalDescription(answer)
     return pc.localDescription
 
@@ -33,6 +34,7 @@ async def websocket_handler(websocket, path):
     global pc
     offer = await websocket.recv()
     offer = json.loads(offer)
+    print(f"Received offer: {offer}")
     rtc_offer = RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
 
     local_description = await run(pc, rtc_offer)
@@ -41,18 +43,19 @@ async def websocket_handler(websocket, path):
         "sdp": local_description.sdp,
         "type": local_description.type
     }))
+    print(f"Sent answer: {local_description}")
 
 async def main():
     global webcam, pc
-    cap = cv2.VideoCapture('IMG_7202.MOV')
-    # cap = cv2.VideoCapture(0) # use webcam
-
+    pc = RTCPeerConnection()
+    # cap = cv2.VideoCapture('IMG_7202.MOV')
+    cap = cv2.VideoCapture(0) # use webcam
     if (cap.isOpened()):
         webcam = VideoTransformTrack(cap)
         pc.addTrack(webcam)
-
         async with websockets.serve(websocket_handler, "0.0.0.0", 8765):
             await asyncio.Future()
+    cap.release()
 
 if __name__ == "__main__":
     asyncio.run(main())

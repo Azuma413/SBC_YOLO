@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Video Stream</title>
+</head>
+<body>
+    <h1>WebRTC Video Stream</h1>
+    <video id="video" autoplay playsinline></video>
+    <script>
+        const video = document.getElementById('video');
+        const pc = new RTCPeerConnection();
+
+        pc.ontrack = (event) => {
+            console.log('Track received:', event);
+            video.srcObject = event.streams[0];
+        };
+
+        async function start() {
+            const ws = new WebSocket('ws://localhost:8765');
+            ws.onopen = async () => {
+                console.log('WebSocket connection opened');
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                ws.send(JSON.stringify({
+                    sdp: pc.localDescription.sdp,
+                    type: pc.localDescription.type
+                }));
+            };
+
+            ws.onmessage = async (message) => {
+                console.log('Message received from server:', message.data);
+                const data = JSON.parse(message.data);
+                const remoteDesc = new RTCSessionDescription(data);
+                await pc.setRemoteDescription(remoteDesc);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket connection closed');
+            };
+        }
+
+        start();
+    </script>
+</body>
+</html>

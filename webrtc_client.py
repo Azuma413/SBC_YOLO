@@ -1,5 +1,4 @@
 import cv2
-import time
 from rknnpool import rknnPoolExecutor
 from func import myFunc
 import aiortc
@@ -30,7 +29,7 @@ class VideoTransformTrack(VideoStreamTrack):
         processed_frame, flag = self.pool.get()
         if not flag:
             return None
-        
+
         frame_rgb = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
 
         return aiortc.VideoFrame.from_ndarray(frame_rgb, format="rgb24")
@@ -65,7 +64,7 @@ async def main():
         TPEs=TPEs,
         func=myFunc
     )
-    
+
     if (cap.isOpened()):
         for i in range(TPEs + 1):
             ret, frame = cap.read()
@@ -80,7 +79,7 @@ async def main():
 
         async with websockets.serve(websocket_handler, "0.0.0.0", 8765):
             await asyncio.Future()
-    
+
     cap.release()
 
 if __name__ == "__main__":
