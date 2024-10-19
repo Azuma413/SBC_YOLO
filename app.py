@@ -7,7 +7,7 @@ from queue import Queue
 from rknnlite.api import RKNNLite
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
-from streamlit_webrtc import VideoTransformerBase, webrtc_streamer
+from streamlit_webrtc import VideoTransformerBase, webrtc_streamer, WebRtcMode
 
 st.title("YOLOv10物体認識デモ")
 
@@ -285,5 +285,12 @@ class VideoProcessor(VideoTransformerBase):
     def on_close(self):
         self.pool.release()
         self.cap.release()
-# 自動でブラウザを開かない
-webrtc_streamer(key="example", video_processor_factory=VideoProcessor, mode="sendonly", rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+
+webrtc_streamer(
+    key="example",
+    video_processor_factory=VideoProcessor,
+    mode=WebRtcMode.SENDONLY,
+    rtc_configuration={
+        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+    }
+)
