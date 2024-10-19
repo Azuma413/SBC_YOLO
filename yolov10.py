@@ -107,56 +107,6 @@ def box_process(position):
 
     return xyxy
 
-def post_process(input_data):
-    boxes, scores, classes_conf = [], [], []
-    defualt_branch=3
-    pair_per_branch = len(input_data)//defualt_branch
-    # Python 忽略 score_sum 输出
-    for i in range(defualt_branch):
-        boxes.append(box_process(input_data[pair_per_branch*i]))
-        classes_conf.append(input_data[pair_per_branch*i+1])
-        scores.append(np.ones_like(input_data[pair_per_branch*i+1][:,:1,:,:], dtype=np.float32))
-
-    def sp_flatten(_in):
-        ch = _in.shape[1]
-        _in = _in.transpose(0,2,3,1)
-        return _in.reshape(-1, ch)
-
-    boxes = [sp_flatten(_v) for _v in boxes]
-    classes_conf = [sp_flatten(_v) for _v in classes_conf]
-    scores = [sp_flatten(_v) for _v in scores]
-
-    boxes = np.concatenate(boxes)
-    classes_conf = np.concatenate(classes_conf)
-    scores = np.concatenate(scores)
-
-    # filter according to threshold
-    boxes, classes, scores = filter_boxes(boxes, scores, classes_conf)
-
-    # nms
-    nboxes, nclasses, nscores = [], [], []
-    for c in set(classes):
-        inds = np.where(classes == c)
-        b = boxes[inds]
-        c = classes[inds]
-        s = scores[inds]
-        keep = nms_boxes(b, s)
-
-        if len(keep) != 0:
-            nboxes.append(b[keep])
-            nclasses.append(c[keep])
-            nscores.append(s[keep])
-
-    if not nclasses and not nscores:
-        return None, None, None
-
-    boxes = np.concatenate(nboxes)
-    classes = np.concatenate(nclasses)
-    scores = np.concatenate(nscores)
-
-    return boxes, classes, scores
-
-
 def post_process_yolov10(input_data):
     max_det, nc = 300, len(CLASSES)
 
@@ -206,9 +156,9 @@ def post_process_yolov10(input_data):
     mask = preds[..., 4] > OBJ_THRESH
 
     preds = [p[mask[idx]] for idx, p in enumerate(preds)][0]
-    boxes = preds[..., :4].numpy()
-    scores =  preds[..., 4].numpy()
-    classes = preds[..., 5].numpy().astype(np.int64)
+    boxes = preds[..., :4]
+    scores =  preds[..., 4]
+    classes = preds[..., 5].astype(np.int64)
 
     return boxes, classes, scores
 
@@ -253,33 +203,37 @@ if __name__ == '__main__':
     if ret != 0:
         print("Init runtime environment failed")
         exit(ret)
-    video = cv2.VideoCapture('IMG_7202.MOV')
-    img_list = []
-    while True:
-        # フレームを取得
-        ret, frame = video.read()
-        if not ret:
-            break
-        img_list.append(frame)
-    video.release()
+    img = cv2.imread('bus.jpg')
+    # video = cv2.VideoCapture('IMG_7202.MOV')
+    # img_list = []
+    # while True:
+    #     # フレームを取得
+    #     ret, frame = video.read()
+    #     if not ret:
+    #         break
+    #     img_list.append(frame)
+    # video.release()
     co_helper = COCO_test_helper(enable_letter_box=True)
 
-    output_list = []
+    # output_list = []
     # run test
-    for img in img_list:
+    # for img in img_list:
         # Due to rga init with (0,0,0), we using pad_color (0,0,0) instead of (114, 114, 114)
-        pad_color = (0,0,0)
-        img = co_helper.letter_box(im= img.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0,0,0))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # 736, 1280, 3 -> 1, 736, 1280, 3
-        img = np.expand_dims(img, axis=0)
-        print(img.shape)
-        outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
-        print(outputs.shape)
-        boxes, classes, scores = post_process_yolov10(outputs)
-        if boxes is not None:
-            draw(img, co_helper.get_real_box(boxes), scores, classes)
-        output_list.append(img)
+    pad_color = (0,0,0)
+    img = co_helper.letter_box(im= img.copy(), new_shape=(IMG_SIZE[1], IMG_SIZE[0]), pad_color=(0,0,0))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # 736, 1280, 3 -> 1, 736, 1280, 3
+    img = np.expand_dims(img, axis=0)
+    print(img.shape)
+    outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
+    # print(outputs.shape)
+    boxes, classes, scores = post_process_yolov10(outputs)
+    if boxes is not None:
+        draw(img, co_helper.get_real_box(boxes), scores, classes)
+    # output_list.append(img)
     # 動画として保存 mp4
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    video = cv2.VideoWriter('output.mp4', fourcc, 30, (1280, 736))
+    # fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    # video = cv2.VideoWriter('output.mp4', fourcc, 30, (1280, 736))
+    
+    # imgを保存
+    cv2.imwrite('output.jpg', img[0])
