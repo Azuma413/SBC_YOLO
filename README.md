@@ -102,7 +102,10 @@ sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 -y
 git clone https://github.com/Azuma413/SBC_YOLO.git
 ```
 
-python yolov10.py --model_path test2.rknn
+# WebRTCテスト
+```
+pip install aiortc websockets opencv-python
+```
 
 
 # リポジトリ
