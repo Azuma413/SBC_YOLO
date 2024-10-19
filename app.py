@@ -271,18 +271,18 @@ class VideoProcessor:
         self.initTime = time.time()
     def recv(self, frame):
         global pool
-        frame = frame.to_ndarray(format="bgr24")
+        nd_frame = frame.to_ndarray(format="bgr24")
         self.count += 1
         logger.info(f"frame count: {self.count}")
         if self.count <= TPEs + 1:
-            pool.put(frame)
+            pool.put(nd_frame)
             logger.info("return frame 1")
             return frame
         if self.count == TPEs + 31:
             self.count = TPEs + 1
             st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}"
             self.loopTime = time.time()
-        pool.put(frame)
+        pool.put(nd_frame)
         logger.info("put frame")
         img, flag = pool.get()
         logger.info("get frame")
