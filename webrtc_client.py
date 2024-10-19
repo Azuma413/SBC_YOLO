@@ -24,12 +24,12 @@ class VideoTransformTrack(VideoStreamTrack):
     async def next_frame(self):
         ret, frame = self.cap.read()
         if not ret:
-            return
+            return None
 
         self.pool.put(frame)
         processed_frame, flag = self.pool.get()
         if not flag:
-            return
+            return None
         
         frame_rgb = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
 
@@ -80,6 +80,8 @@ async def main():
 
         async with websockets.serve(websocket_handler, "0.0.0.0", 8765):
             await asyncio.Future()
+    
+    cap.release()
 
 if __name__ == "__main__":
     asyncio.run(main())

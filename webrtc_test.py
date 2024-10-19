@@ -44,8 +44,8 @@ async def websocket_handler(websocket, path):
 
 async def main():
     global webcam, pc
-    # cap = cv2.VideoCapture('IMG_7202.MOV')
-    cap = cv2.VideoCapture(0) # use webcam
+    cap = cv2.VideoCapture('IMG_7202.MOV')
+    # cap = cv2.VideoCapture(0) # use webcam
 
     if (cap.isOpened()):
         webcam = VideoTransformTrack(cap)

@@ -43,8 +43,7 @@ class rknnPoolExecutor():
         self.num = 0
 
     def put(self, frame):
-        self.queue.put(self.pool.submit(
-            self.func, self.rknnPool[self.num % self.TPEs], frame))
+        self.queue.put(self.pool.submit(self.func, self.rknnPool[self.num % self.TPEs], frame))
         self.num += 1
 
     def get(self):
