@@ -7,6 +7,7 @@ from queue import Queue
 from rknnlite.api import RKNNLite
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
+from streamlit_webrtc import VideoTransformerBase, webrtc_streamer
 
 st.title("YOLOv10物体認識デモ")
 
@@ -165,7 +166,6 @@ def post_process(input_data):
 def draw(image, boxes, scores, classes):
     for box, score, cl in zip(boxes, scores, classes):
         top, left, right, bottom = [int(_b) for _b in box]
-        # print("%s @ (%d %d %d %d) %.3f" % (CLASSES[cl], top, left, right, bottom, score))
         cv2.rectangle(image, (top, left), (right, bottom), (255, 0, 0), 2)
         cv2.putText(image, '{0} {1:.2f}'.format(CLASSES[cl], score),
                     (top, left - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
@@ -183,8 +183,6 @@ def myFunc(rknn_lite, src):
     img = np.expand_dims(img, 0)
     outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
     boxes, classes, scores = post_process(outputs)
-    # boxのサイズを元の画像サイズに変換
-    boxes = boxes[0]
     boxes[:, [0, 2]] = boxes[:, [0, 2]] * src.shape[1] / IMG_SIZE[1]
     boxes[:, [1, 3]] = boxes[:, [1, 3]] * src.shape[0] / IMG_SIZE[0]
     if boxes is not None:
@@ -245,43 +243,45 @@ class rknnPoolExecutor():
         for rknn_lite in self.rknnPool:
             rknn_lite.release()
 
-
-
-pool = rknnPoolExecutor(
-    rknnModel=modelPath,
-    TPEs=TPEs,
-    func=myFunc)
-
-# cap = cv2.VideoCapture(0)
-cap = cv2.VideoCapture('IMG_7202.MOV')
-
-if (cap.isOpened()):
-    for i in range(TPEs + 1):
-        ret, frame = cap.read()
-        if not ret:
-            cap.release()
-            del pool
-            exit(-1)
-        pool.put(frame)
-
-frames, loopTime, initTime = 0, time.time(), time.time()
 frame_window = st.image([])
 fps_text = st.empty()
 
-while (cap.isOpened()):
-    frames += 1
-    ret, frame = cap.read()
-    if not ret:
-        st.error("Could not read frame")
-        break
-    pool.put(frame)
-    frame, flag = pool.get()
-    if flag == False:
-        break
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame_window.image(frame)
-    if frames % 30 == 0:
-        fps_text.text(f"{30 / (time.time() - loopTime)}fps")
-        loopTime = time.time()
-
-cap.release()
+class VideoProcessor(VideoTransformerBase):
+    def __init__(self):
+        self.cap = cv2.VideoCapture('IMG_7202.MOV')
+        # self.cap = cv2.VideoCapture(0)
+        self.pool = rknnPoolExecutor(
+            rknnModel=modelPath,
+            TPEs=TPEs,
+            func=myFunc
+        )
+        if self.cap.isOpened():
+            for i in range(TPEs + 1):
+                ret, frame = self.cap.read()
+                if not ret:
+                    self.cap.release()
+                    del self.pool
+                    exit(-1)
+                self.pool.put(frame)
+        self.count = 0
+        self.loopTime = time.time()
+        self.initTime = time.time()
+    def recv(self, frame):
+        self.count += 1
+        if self.count % 30 == 0:
+            self.count = 0
+            fps_text.text(f"{30 / (time.time() - self.loopTime):.2f}fps")
+            self.loopTime = time.time()
+        ret, img = self.cap.read()
+        if not ret:
+            st.error("Could not read frame")
+            return frame
+        self.pool.put(img)
+        img, flag = self.pool.get()
+        if flag == False:
+            return frame
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return img
+    def on_close(self):
+        self.pool.release()
+        self.cap.release()
