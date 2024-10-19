@@ -76,13 +76,14 @@ pip install "numpy<2"
 ```
 
 TODO: ファインチューニングの具体的な方法を書く。
-
+yolo detect train data=coco.yaml model=yolov10n/s/m/b/l/x.yaml epochs=500 batch=256 imgsz=640 device=0,1,2,3,4,5,6,7
 ファインチューニングの方法については[こちら](https://qiita.com/hirekatsu0523/items/f2f0e1a0f8a9ea92d913)を参照。
 
 ### rknn変換
+yoloは通常，学習段階で640*640に最適化されているので，いじらない方が良い。
 ```
 conda activate yolov10
-yolo export model=path/to/your_model.pt format=rknn opset=13 simplify imgsz=736,1280
+yolo export model=path/to/your_model.pt format=rknn opset=13 simplify imgsz=640
 ```
 これでrknnに対応した形式のonnxファイルが出力される。
 ```
@@ -93,7 +94,6 @@ python convert.py your_model.onnx rk3588 i8 your_model.rknn
 cd ../../../..
 cp rknn_model_zoo/examples/yolov10/python/your_model.rknn .
 ```
-
 ### SBC
 ```
 sudo apt update

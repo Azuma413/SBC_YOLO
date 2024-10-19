@@ -9,8 +9,7 @@ NMS_THRESH = 0.45
 # OBJ_THRESH = 0.001
 # NMS_THRESH = 0.65
 
-# IMG_SIZE = (640, 640)  # (width, height), such as (1280, 736)
-IMG_SIZE = (1280, 736)
+IMG_SIZE = (640, 640)
 
 CLASSES = ("person", "bicycle", "car","motorbike ","aeroplane ","bus ","train","truck ","boat","traffic light",
            "fire hydrant","stop sign ","parking meter","bench","bird","cat","dog ","horse ","sheep","cow","elephant",

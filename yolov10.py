@@ -14,8 +14,7 @@ NMS_THRESH = 0.45
 # OBJ_THRESH = 0.001
 # NMS_THRESH = 0.65
 
-# IMG_SIZE = (640, 640)  # (width, height), such as (1280, 736)
-IMG_SIZE = (1088, 608)
+IMG_SIZE = (640, 640)  # (width, height), such as (1280, 736)
 
 CLASSES = ("person", "bicycle", "car","motorbike ","aeroplane ","bus ","train","truck ","boat","traffic light",
            "fire hydrant","stop sign ","parking meter","bench","bird","cat","dog ","horse ","sheep","cow","elephant",
@@ -229,7 +228,7 @@ if __name__ == '__main__':
     # print(outputs.shape)
     boxes, classes, scores = post_process_yolov10(outputs)
     if boxes is not None:
-        draw(img, co_helper.get_real_box(boxes), scores, classes)
+        draw(img[0], co_helper.get_real_box(boxes), scores, classes)
     # output_list.append(img)
     # 動画として保存 mp4
     # fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')

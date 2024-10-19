@@ -6,7 +6,7 @@ from func import myFunc
 
 cap = cv2.VideoCapture('IMG_7202.MOV')
 # cap = cv2.VideoCapture(0)
-modelPath = "test2.rknn"
+modelPath = "test.rknn"
 # 线程数, 增大可提高帧率
 TPEs = 6
 # 初始化rknn池
