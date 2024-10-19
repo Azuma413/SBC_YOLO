@@ -251,12 +251,8 @@ class rknnPoolExecutor():
         for rknn_lite in self.rknnPool:
             rknn_lite.release()
 
-if 'fps' not in st.session_state:
-    st.session_state.fps = '計算中...'
-if 'last_update' not in st.session_state:
-    st.session_state.last_update = time.time()
-
 fps_text = st.empty()
+fps_text.text("FPS: 計算中...")
 pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
 
 def create_player():
@@ -270,8 +266,8 @@ class VideoProcessor:
         self.loopTime = time.time()
         self.initTime = time.time()
     def recv(self, frame):
-        global pool
-        nd_frame = frame.to_ndarray()
+        global pool, fps_text
+        nd_frame = frame.to_ndarray(format="rgb24")
         self.count += 1
         logger.info(f"frame count: {self.count}")
         if self.count <= TPEs + 1:
@@ -280,7 +276,7 @@ class VideoProcessor:
             return frame
         if self.count == TPEs + 31:
             self.count = TPEs + 1
-            st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}"
+            fps_text.text(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
             self.loopTime = time.time()
         pool.put(nd_frame)
         logger.info("put frame")
@@ -292,12 +288,6 @@ class VideoProcessor:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         logger.info("convert color")
         return av.VideoFrame.from_ndarray(img, format="bgr24")
-
-def update_fps():
-    current_time = time.time()
-    if current_time - st.session_state.last_update >= 0.5:
-        fps_text.text(f"FPS: {st.session_state.fps}")
-        st.session_state.last_update = current_time
 
 ctx = webrtc_streamer(
     key="example",
@@ -316,5 +306,3 @@ ctx = webrtc_streamer(
 if ctx.video_processor:
     ctx.video_processor.threshold1 = OBJ_THRESH
     ctx.video_processor.threshold2 = NMS_THRESH
-
-update_fps()
