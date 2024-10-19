@@ -10,8 +10,14 @@ import numpy as np
 from streamlit_webrtc import VideoTransformerBase, webrtc_streamer, WebRtcMode
 import av
 from aiortc.contrib.media import MediaPlayer
-from logging import getLogger
-logger = getLogger(__name__)
+import logging
+logging.basicConfig(
+    level=logging.DEBUG,  # ログレベルを設定（DEBUG, INFO, WARNING, ERROR, CRITICAL）
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    filename='app.log',  # ログを保存するファイル名を指定
+    filemode='a'  # 'a'（追加モード）または 'w'（上書きモード）
+)
+logger = logging.getLogger(__name__)
 
 st.title("YOLOv10物体認識デモ")
 
@@ -273,11 +279,17 @@ class VideoProcessor:
         #     self.count = TPEs + 1
         #     st.session_state.fps = f"{30 / (time.time() - self.loopTime):.2f}"
         #     self.loopTime = time.time()
+        logger.debug("recv")
         pool.put(frame)
+        logger.debug("put")
         img, flag = pool.get()
+        logger.debug("get")
         if flag == False:
+            logger.debug("flag == False")
             return frame
+        logger.debug("flag == True")
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        logger.debug("cv2.cvtColor")
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 def update_fps():
