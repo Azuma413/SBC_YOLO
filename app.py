@@ -8,11 +8,10 @@ from rknnlite.api import RKNNLite
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 
-st.title("My first Streamlit app")
-st.write("Hello, world")
+st.title("YOLOv10物体認識デモ")
 
-OBJ_THRESH = st.slider("Threshold1", min_value=0, max_value=1, step=0.01, value=0.25)
-NMS_THRESH = st.slider("Threshold2", min_value=0, max_value=1, step=0.01, value=0.45)
+OBJ_THRESH = st.slider("しきい値1", min_value=0.0, max_value=1.0, step=0.01, value=0.25)
+NMS_THRESH = st.slider("しきい値2", min_value=0.0, max_value=1.0, step=0.01, value=0.45)
 
 modelPath = "test.rknn"
 TPEs = 6
@@ -178,22 +177,19 @@ def img_check(path):
             return True
     return False
 
-def myFunc(rknn_lite, IMG_SRC):
-    IMG = cv2.cvtColor(IMG_SRC.copy(), cv2.COLOR_BGR2RGB)
-    # 等比例缩放
-    # IMG = letterbox(IMG)
-    # 强制放缩
-    IMG = cv2.resize(IMG, IMG_SIZE)
-    IMG = np.expand_dims(IMG, 0)
-    outputs = rknn_lite.inference(inputs=[IMG], data_format=['nhwc'])
-
+def myFunc(rknn_lite, src):
+    img = cv2.cvtColor(src.copy(), cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, IMG_SIZE)
+    img = np.expand_dims(img, 0)
+    outputs = rknn_lite.inference(inputs=[img], data_format=['nhwc'])
     boxes, classes, scores = post_process(outputs)
-
-    # IMG = cv2.cvtColor(IMG[0], cv2.COLOR_RGB2BGR)
-    IMG_P = IMG_SRC.copy()
+    # boxのサイズを元の画像サイズに変換
+    boxes = boxes[0]
+    boxes[:, [0, 2]] = boxes[:, [0, 2]] * src.shape[1] / IMG_SIZE[1]
+    boxes[:, [1, 3]] = boxes[:, [1, 3]] * src.shape[0] / IMG_SIZE[0]
     if boxes is not None:
-        draw(IMG_P, boxes, scores, classes)
-    return IMG_P
+        draw(src, boxes, scores, classes)
+    return src
 
 def initRKNN(rknnModel="./rknnModel/yolov5s.rknn", id=0):
     rknn_lite = RKNNLite(verbose=False)
@@ -282,9 +278,10 @@ while (cap.isOpened()):
     frame, flag = pool.get()
     if flag == False:
         break
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame_window.image(frame)
     if frames % 30 == 0:
-        fps_text.text(f"{30 / (time.time() - loopTime)} fps")
+        fps_text.text(f"{30 / (time.time() - loopTime)}fps")
         loopTime = time.time()
 
 cap.release()
