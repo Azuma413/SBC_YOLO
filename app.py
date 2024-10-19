@@ -8,6 +8,8 @@ from rknnlite.api import RKNNLite
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from streamlit_webrtc import VideoTransformerBase, webrtc_streamer, WebRtcMode
+import av
+from aiortc.contrib.media import MediaPlayer
 
 st.title("YOLOv10物体認識デモ")
 
@@ -246,23 +248,18 @@ class rknnPoolExecutor():
 frame_window = st.image([])
 fps_text = st.empty()
 
-class VideoProcessor(VideoTransformerBase):
+def create_player():
+    return MediaPlayer('IMG_7202.MOV')
+
+class VideoProcessor:
     def __init__(self):
-        self.cap = cv2.VideoCapture('IMG_7202.MOV')
-        # self.cap = cv2.VideoCapture(0)
+        self.threshold1 = OBJ_THRESH
+        self.threshold2 = NMS_THRESH
         self.pool = rknnPoolExecutor(
             rknnModel=modelPath,
             TPEs=TPEs,
             func=myFunc
         )
-        if self.cap.isOpened():
-            for i in range(TPEs + 1):
-                ret, frame = self.cap.read()
-                if not ret:
-                    self.cap.release()
-                    del self.pool
-                    exit(-1)
-                self.pool.put(frame)
         self.count = 0
         self.loopTime = time.time()
         self.initTime = time.time()
@@ -272,25 +269,27 @@ class VideoProcessor(VideoTransformerBase):
             self.count = 0
             fps_text.text(f"{30 / (time.time() - self.loopTime):.2f}fps")
             self.loopTime = time.time()
-        ret, img = self.cap.read()
-        if not ret:
-            st.error("Could not read frame")
-            return frame
-        self.pool.put(img)
+        self.pool.put(frame)
         img, flag = self.pool.get()
         if flag == False:
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        return img
-    def on_close(self):
-        self.pool.release()
-        self.cap.release()
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-webrtc_streamer(
+ctx = webrtc_streamer(
     key="example",
-    video_processor_factory=VideoProcessor,
-    mode=WebRtcMode.SENDONLY,
+    mode=WebRtcMode.RECVONLY,
     rtc_configuration={
         "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-    }
+    },
+    media_stream_constraints={
+        "video": True,
+        "audio": False,
+    },
+    player_factory=create_player,
+    video_processor_factory=VideoProcessor,
 )
+
+if ctx.video_processor:
+    ctx.video_processor.threshold1 = OBJ_THRESH
+    ctx.video_processor.threshold2 = NMS_THRESH
