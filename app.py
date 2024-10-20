@@ -265,16 +265,14 @@ class VideoProcessor:
         self.count = 0
         self.loopTime = time.time()
         self.initTime = time.time()
-        self.prior_frame = None
     def recv(self, frame):
         global pool
+        logger.info(f"current time: {time.time() - self.initTime:.2f}, frame time: {frame.time:.2f}")
+        if time.time() - self.initTime - frame.time > 0.5: # 遅延が0.5秒以上の場合は前のフレームを返す
+            return frame
+        self.count += 1
         nd_frame = frame.to_ndarray(format="rgb24")
         pool.put(nd_frame)
-        if time.time() - frame.time > 0.5: # 遅延が0.5秒以上の場合は前のフレームを返す
-            logger.info(f"current time: {time.time():.2f}, frame time: {frame.time:.2f}")
-            logger.info(f"Time Delay: {time.time() - frame.time:.2f}")
-            return self.prior_frame
-        self.count += 1
         if self.count <= TPEs + 1:
             return frame
         if self.count == TPEs + 31:
@@ -285,8 +283,7 @@ class VideoProcessor:
         if flag == False:
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        self.prior_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
-        return self.prior_frame
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 ctx = webrtc_streamer(
     key="example",
