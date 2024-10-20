@@ -264,12 +264,11 @@ class VideoProcessor:
         self.threshold2 = NMS_THRESH
         self.count = 0
         self.loopTime = time.time()
-        self.initTime = time.time()
+        self.prior_frame = None
     def recv(self, frame):
         global pool
-        logger.info(f"current time: {time.time() - self.initTime:.2f}, frame time: {frame.time:.2f}")
-        if time.time() - self.initTime - frame.time > 0.5: # 遅延が0.5秒以上の場合は前のフレームを返す
-            return frame
+        if self.count %2 == 0 and self.prior_frame is not None:
+            return self.prior_frame
         self.count += 1
         nd_frame = frame.to_ndarray(format="rgb24")
         pool.put(nd_frame)
@@ -283,7 +282,8 @@ class VideoProcessor:
         if flag == False:
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
+        self.prior_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
+        return self.prior_frame
 
 ctx = webrtc_streamer(
     key="example",
@@ -297,6 +297,7 @@ ctx = webrtc_streamer(
     },
     player_factory=create_player,
     video_processor_factory=VideoProcessor,
+    async_processing=True,
 )
 
 if ctx.video_processor:
