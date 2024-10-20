@@ -264,26 +264,28 @@ class VideoProcessor:
         self.threshold2 = NMS_THRESH
         self.count = 0
         self.loopTime = time.time()
-        self.prior_frame = None
     def recv(self, frame):
-        global pool
-        if self.count %2 == 0 and self.prior_frame is not None:
-            return self.prior_frame
-        self.count += 1
-        nd_frame = frame.to_ndarray(format="rgb24")
-        pool.put(nd_frame)
-        if self.count <= TPEs + 1:
-            return frame
-        if self.count == TPEs + 31:
-            self.count = TPEs + 1
-            logger.info(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
-            self.loopTime = time.time()
-        img, flag = pool.get()
-        if flag == False:
-            return frame
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        self.prior_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
-        return self.prior_frame
+        time.sleep(0.1)
+        return frame
+        # global pool
+        # self.count += 1
+        # nd_frame = frame.to_ndarray(format="rgb24")
+        # pool.put(nd_frame)
+        # if self.count <= TPEs + 1:
+        #     return frame
+        # if self.count == TPEs + 31:
+        #     self.count = TPEs + 1
+        #     logger.info(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
+        #     self.loopTime = time.time()
+        # img, flag = pool.get()
+        # if flag == False:
+        #     return frame
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+def frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+    time.sleep(0.1)
+    return frame
 
 ctx = webrtc_streamer(
     key="example",
@@ -297,6 +299,7 @@ ctx = webrtc_streamer(
     },
     player_factory=create_player,
     video_processor_factory=VideoProcessor,
+    # video_frame_callback=frame_callback,
     async_processing=True,
 )
 
