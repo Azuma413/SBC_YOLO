@@ -62,6 +62,7 @@ sudo pip install aiortc websockets opencv-python streamlit==1.33.0 streamlit-web
 ```
 動作テスト
 ```
+cd SBC_YOLO
 streamlit run app.py --server.headless true
 ```
 # YOLOv10
