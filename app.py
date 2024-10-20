@@ -3,7 +3,7 @@ import cv2
 import time
 from queue import Queue
 from rknnlite.api import RKNNLite
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
@@ -238,16 +238,13 @@ class rknnPoolExecutor():
         self.num = 0
 
     def put(self, frame):
-        # 画像をキューに入れると同時に、RKNNで推論を行う
         self.queue.put(self.pool.submit(self.func, self.rknnPool[self.num % self.TPEs], frame))
         self.num += 1
 
     def get(self):
         if self.queue.empty():
             return None, False
-        # fut = self.queue.get()
-        # 最新のフレームを取り出す
-        fut = self.queue.get_nowait()
+        fut = self.queue.get()
         return fut.result(), True
 
     def release(self):
@@ -259,7 +256,6 @@ pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
 
 def create_player():
     # return MediaPlayer('IMG_7202.MOV')
-    # フレームレートを制限
     return MediaPlayer('/dev/video0', format='v4l2', options={'video_size': '640x480'})
     # return MediaPlayer('/dev/video0', format='v4l2', options={'video_size': '640x480', 'framerate': '16'})
 
@@ -287,22 +283,6 @@ class VideoProcessor:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-count = 0
-def frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
-    global count, pool
-    count += 1
-    if count <= TPEs + 1:
-        pool.put(frame.to_ndarray(format="rgb24"))
-        return frame
-    nd_frame = frame.to_ndarray(format="rgb24")
-    if not pool.queue.full():
-        pool.put(nd_frame)
-    img, flag = pool.get()
-    if flag == False:
-        return frame
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    return av.VideoFrame.from_ndarray(img, format="bgr24")
-
 ctx = webrtc_streamer(
     key="example",
     mode=WebRtcMode.RECVONLY,
@@ -314,8 +294,7 @@ ctx = webrtc_streamer(
         "audio": False,
     },
     player_factory=create_player,
-    # video_processor_factory=VideoProcessor,
-    video_frame_callback=frame_callback,
+    video_processor_factory=VideoProcessor,
     async_processing=True,
 )
 

@@ -14,7 +14,9 @@ nmtuiでwifiに接続する。
 ```
 setxkbmap us dvorak
 sudo apt update && sudo apt upgrade -y
-```
+``` 
+sudo apt install console-setup
+sudo loadkeys dvorak
 ```
 sudo visudo
 ```
@@ -46,9 +48,21 @@ sudo systemctl status avahi-daemon
 sudo systemctl start ssh
 ```
 ### PC
-vscodeのリモートエクスプローラを開く
+(.ssh/known_hostsのrock-5cの部分を削除して)ssh接続する
 ```
 ssh radxa@rock-5c.local
+```
+各種ダウンロード
+```
+sudo apt update
+sudo apt install git python3-rknnlite2 rknn-model-zoo-rk3588 guvcview -y
+mkdir SourceCode && cd SourceCode
+git clone https://github.com/Azuma413/SBC_YOLO.git
+sudo pip install aiortc websockets opencv-python streamlit==1.33.0 streamlit-webrtc --break-system-packages
+```
+動作テスト
+```
+streamlit run app.py --server.headless true
 ```
 # YOLOv10
 ### ファインチューニング
@@ -94,25 +108,11 @@ python convert.py your_model.onnx rk3588 i8 your_model.rknn
 cd ../../../..
 cp rknn_model_zoo/examples/yolov10/python/your_model.rknn .
 ```
-### SBC
-```
-sudo apt update
-sudo apt install git
-sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 guvcview -y
-git clone https://github.com/Azuma413/SBC_YOLO.git
-```
-
-# WebRTCテスト
-```
-sudo pip install aiortc websockets opencv-python streamlit==1.33.0 streamlit-webrtc --break-system-packages
-streamlit run app.py --server.headless true
-```
 
 
 # リポジトリ
 [rknn_model_zoo](https://github.com/airockchip/rknn_model_zoo)\
-[rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2)\
-[rknn-cpp-Multithreading](https://github.com/leafqycc/rknn-cpp-Multithreading)
+[rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2)
 
 # 参考
 [公式ドキュメント](https://developer.d-robotics.cc/rdk_doc/en/Basic_Development)\
