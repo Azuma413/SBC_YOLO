@@ -265,27 +265,27 @@ class VideoProcessor:
         self.count = 0
         self.loopTime = time.time()
     def recv(self, frame):
-        time.sleep(0.1)
-        return frame
-        # global pool
-        # self.count += 1
-        # nd_frame = frame.to_ndarray(format="rgb24")
-        # pool.put(nd_frame)
-        # if self.count <= TPEs + 1:
-        #     return frame
-        # if self.count == TPEs + 31:
-        #     self.count = TPEs + 1
-        #     logger.info(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
-        #     self.loopTime = time.time()
-        # img, flag = pool.get()
-        # if flag == False:
-        #     return frame
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # return av.VideoFrame.from_ndarray(img, format="bgr24")
+        global pool
+        self.count += 1
+        nd_frame = frame.to_ndarray(format="rgb24")
+        if pool.queue.full(): # queueがいっぱいの時はフレームを取り出して新しいフレームを入れる
+            pool.queue.get_nowait()
+        pool.put(nd_frame)
+        if self.count <= TPEs + 1:
+            return frame
+        if self.count == TPEs + 31:
+            self.count = TPEs + 1
+            logger.info(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
+            self.loopTime = time.time()
+        img, flag = pool.get()
+        if flag == False:
+            return frame
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-def frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
-    time.sleep(0.1)
-    return frame
+# def frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+#     time.sleep(0.1)
+#     return frame
 
 ctx = webrtc_streamer(
     key="example",
