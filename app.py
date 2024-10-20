@@ -26,6 +26,7 @@ modelPath = "test.rknn"
 TPEs = 6
 
 IMG_SIZE = (640, 640)
+QUEUE_SIZE = 10
 
 CLASSES = ("person", "bicycle", "car","motorbike ","aeroplane ","bus ","train","truck ","boat","traffic light",
            "fire hydrant","stop sign ","parking meter","bench","bird","cat","dog ","horse ","sheep","cow","elephant",
@@ -230,7 +231,7 @@ def initRKNNs(rknnModel="./rknnModel/yolov5s.rknn", TPEs=1):
 class rknnPoolExecutor():
     def __init__(self, rknnModel, TPEs, func):
         self.TPEs = TPEs
-        self.queue = Queue()
+        self.queue = Queue(maxsize=QUEUE_SIZE)
         self.rknnPool = initRKNNs(rknnModel, TPEs)
         self.pool = ThreadPoolExecutor(max_workers=TPEs)
         self.func = func
@@ -254,7 +255,8 @@ class rknnPoolExecutor():
 pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
 
 def create_player():
-    return MediaPlayer('IMG_7202.MOV')
+    # return MediaPlayer('IMG_7202.MOV')
+    return MediaPlayer('/dev/video0', format='v4l2', options={'video_size': '640x480'})
 
 class VideoProcessor:
     def __init__(self):

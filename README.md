@@ -98,7 +98,7 @@ cp rknn_model_zoo/examples/yolov10/python/your_model.rknn .
 ```
 sudo apt update
 sudo apt install git
-sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 -y
+sudo apt install python3-rknnlite2 rknn-model-zoo-rk3588 guvcview -y
 git clone https://github.com/Azuma413/SBC_YOLO.git
 ```
 
