@@ -259,7 +259,9 @@ pool = rknnPoolExecutor(rknnModel=modelPath, TPEs=TPEs, func=myFunc)
 
 def create_player():
     # return MediaPlayer('IMG_7202.MOV')
+    # フレームレートを制限
     return MediaPlayer('/dev/video0', format='v4l2', options={'video_size': '640x480'})
+    # return MediaPlayer('/dev/video0', format='v4l2', options={'video_size': '640x480', 'framerate': '16'})
 
 class VideoProcessor:
     def __init__(self):
@@ -285,9 +287,21 @@ class VideoProcessor:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-# def frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
-#     time.sleep(0.1)
-#     return frame
+count = 0
+def frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+    global count, pool
+    count += 1
+    if count <= TPEs + 1:
+        pool.put(frame.to_ndarray(format="rgb24"))
+        return frame
+    nd_frame = frame.to_ndarray(format="rgb24")
+    if not pool.queue.full():
+        pool.put(nd_frame)
+    img, flag = pool.get()
+    if flag == False:
+        return frame
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 ctx = webrtc_streamer(
     key="example",
@@ -300,8 +314,8 @@ ctx = webrtc_streamer(
         "audio": False,
     },
     player_factory=create_player,
-    video_processor_factory=VideoProcessor,
-    # video_frame_callback=frame_callback,
+    # video_processor_factory=VideoProcessor,
+    video_frame_callback=frame_callback,
     async_processing=True,
 )
 
