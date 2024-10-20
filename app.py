@@ -5,7 +5,7 @@ from queue import Queue
 from rknnlite.api import RKNNLite
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
-from streamlit_webrtc import VideoTransformerBase, webrtc_streamer, WebRtcMode
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
 from aiortc.contrib.media import MediaPlayer
 import logging
@@ -265,23 +265,26 @@ class VideoProcessor:
         self.count = 0
         self.loopTime = time.time()
         self.initTime = time.time()
+        self.prior_frame = None
     def recv(self, frame):
         global pool
         nd_frame = frame.to_ndarray(format="rgb24")
+        pool.put(nd_frame)
+        if time.time() - frame.time > 0.5: # 遅延が0.5秒以上の場合は前のフレームを返す
+            return self.prior_frame
         self.count += 1
         if self.count <= TPEs + 1:
-            pool.put(nd_frame)
             return frame
         if self.count == TPEs + 31:
             self.count = TPEs + 1
             logger.info(f"FPS: {30 / (time.time() - self.loopTime):.2f}")
             self.loopTime = time.time()
-        pool.put(nd_frame)
         img, flag = pool.get()
         if flag == False:
             return frame
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
+        self.prior_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
+        return self.prior_frame
 
 ctx = webrtc_streamer(
     key="example",
