@@ -121,5 +121,3 @@ cp rknn_model_zoo/examples/yolov10/python/your_model.rknn .
 [転倒データセット3](https://www.perplexity.ai/search/zhuan-dao-jian-zhi-shou-fa-tot-YMOwBnkGTA69gU3SQhbZMw)\
 [NPUで高速推論](https://qiita.com/ysuito/items/a0d3201581f9057c973b#npu%E3%81%A8%E3%81%AF)\
 [YOLOv8で転倒検出](https://github.com/pahaht/YOLOv8-Fall-detection)\
-[Google検索](https://www.google.com/search?q=yolo+human+falling&sca_esv=fef8a0a8565c2553&sxsrf=ADLYWIK8XVuBc0kY8tuDLcxB5Fnie2qsaA%3A1728566423082&source=hp&ei=l9QHZ_rhAYfCvr0Pl7ekwQg&iflsig=AL9hbdgAAAAAZwfipxpoqxLX23iIPpkSSvkbhSfRzRyT&ved=0ahUKEwi6ifbc84OJAxUHoa8BHZcbKYgQ4dUDCA8&uact=5&oq=yolo+human+falling&gs_lp=Egdnd3Mtd2l6IhJ5b2xvIGh1bWFuIGZhbGxpbmcyCBAAGIAEGKIEMggQABiABBiiBDIIEAAYgAQYogQyCBAAGIAEGKIEMggQABiABBiiBEjyHlCjAViaHXABeACQAQCYAXSgAbINqgEEMTQuNLgBA8gBAPgBAZgCE6ACzA2oAgrCAgcQIxgnGOoCwgIMECMYgAQYExgnGIoFwgINEAAYgAQYsQMYgwEYBMICCxAAGIAEGLEDGIMBwgIQEAAYgAQYsQMYQxiDARiKBcICDhAAGIAEGLEDGIMBGIoFwgIKEAAYgAQYsQMYBMICBxAAGIAEGATCAgoQABiABBhDGIoFwgIFEAAYgATCAggQABiABBixA8ICCRAAGIAEGAQYCsICCBAAGIAEGMsBwgIEEAAYHsICBhAAGAgYHsICCBAAGAgYChgewgIKEAAYCBgKGA0YHsICBRAhGKABmAMEkgcEMTEuOKAHjC8&sclient=gws-wiz)\
-色々ある。
