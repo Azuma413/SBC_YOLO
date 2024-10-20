@@ -238,13 +238,16 @@ class rknnPoolExecutor():
         self.num = 0
 
     def put(self, frame):
+        # 画像をキューに入れると同時に、RKNNで推論を行う
         self.queue.put(self.pool.submit(self.func, self.rknnPool[self.num % self.TPEs], frame))
         self.num += 1
 
     def get(self):
         if self.queue.empty():
             return None, False
-        fut = self.queue.get()
+        # fut = self.queue.get()
+        # 最新のフレームを取り出す
+        fut = self.queue.get_nowait()
         return fut.result(), True
 
     def release(self):
@@ -268,9 +271,8 @@ class VideoProcessor:
         global pool
         self.count += 1
         nd_frame = frame.to_ndarray(format="rgb24")
-        if pool.queue.full(): # queueがいっぱいの時はフレームを取り出して新しいフレームを入れる
-            pool.queue.get_nowait()
-        pool.put(nd_frame)
+        if not pool.queue.full():
+            pool.put(nd_frame)
         if self.count <= TPEs + 1:
             return frame
         if self.count == TPEs + 31:
