@@ -121,4 +121,4 @@ cp rknn_model_zoo/examples/yolov10/python/your_model.rknn .
 [転倒データセット2](https://universe.roboflow.com/hero-d6kgf/yolov5-fall-detection)\
 [転倒データセット3](https://www.perplexity.ai/search/zhuan-dao-jian-zhi-shou-fa-tot-YMOwBnkGTA69gU3SQhbZMw)\
 [NPUで高速推論](https://qiita.com/ysuito/items/a0d3201581f9057c973b#npu%E3%81%A8%E3%81%AF)\
-[YOLOv8で転倒検出](https://github.com/pahaht/YOLOv8-Fall-detection)\
+[YOLOv8で転倒検出](https://github.com/pahaht/YOLOv8-Fall-detection)
