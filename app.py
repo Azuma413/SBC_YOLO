@@ -271,6 +271,8 @@ class VideoProcessor:
         nd_frame = frame.to_ndarray(format="rgb24")
         pool.put(nd_frame)
         if time.time() - frame.time > 0.5: # 遅延が0.5秒以上の場合は前のフレームを返す
+            logger.info(f"current time: {time.time():.2f}, frame time: {frame.time:.2f}")
+            logger.info(f"Time Delay: {time.time() - frame.time:.2f}")
             return self.prior_frame
         self.count += 1
         if self.count <= TPEs + 1:
